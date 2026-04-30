@@ -83,17 +83,20 @@ python .agents/skills/forgestack/scripts/save_session.py --id PROJECT_ID --field
 
 ### Phase 2 — SPEC
 ```bash
+python .agents/skills/forgestack/scripts/validate_phase.py --id PROJECT_ID --phase spec
 python .agents/skills/forgestack/scripts/sync_context.py --id PROJECT_ID
 # Load: {output_dir}/docs/requirements.md
 ```
 Delegate to `@spec` sub-agent. **Show full spec to user. Wait for confirmation.**
 ```bash
 python .agents/skills/forgestack/scripts/save_session.py --id PROJECT_ID --field spec --data '{"feature_contracts":[...],"model_contracts":[...],"confirmed":true}'
+python .agents/skills/forgestack/scripts/write_phase_doc.py --id PROJECT_ID --phase spec
 python .agents/skills/forgestack/scripts/save_session.py --id PROJECT_ID --field status --data '"architecture"'
 ```
 
 ### Phase 3 — ARCHITECTURE
 ```bash
+python .agents/skills/forgestack/scripts/validate_phase.py --id PROJECT_ID --phase architecture
 python .agents/skills/forgestack/scripts/sync_context.py --id PROJECT_ID
 # Load: {output_dir}/docs/spec.md
 ```
@@ -107,6 +110,7 @@ python .agents/skills/forgestack/scripts/save_session.py --id PROJECT_ID --field
 
 ### Phase 4 — PLANNING
 ```bash
+python .agents/skills/forgestack/scripts/validate_phase.py --id PROJECT_ID --phase planning
 python .agents/skills/forgestack/scripts/sync_context.py --id PROJECT_ID
 # Load: {output_dir}/docs/spec.md
 # Load: {output_dir}/docs/architecture.md
@@ -119,6 +123,10 @@ python .agents/skills/forgestack/scripts/save_session.py --id PROJECT_ID --field
 ```
 
 ### Phase 5 — IMPLEMENTATION LOOP
+
+```bash
+python .agents/skills/forgestack/scripts/validate_phase.py --id PROJECT_ID --phase implementation
+```
 
 For each `pending` task in priority order:
 
@@ -154,18 +162,6 @@ Print summary: name, ID, output dir, stack, spec (F-contract count, M-contract c
 | Save after | Save after every phase and task |
 | User in loop | Confirm spec, architecture, backlog before building |
 | Stack-agnostic | Best fit for requirements, not your default |
-| Resume-safe | Every interruption recoverable from session + phase docs |
-
----
-
-## Principles
-
-| | |
-|---|---|
-| Load first | `sync_context.py` before every phase |
-| Save after | Save after every phase and task |
-| User in loop | Confirm architecture + backlog before building |
-| Stack-agnostic | Choose the right tool for the requirements, not your default |
 | Atomic tasks | One concern, one layer, one test per task |
-| Resume-safe | Every interruption recoverable from session |
+| Resume-safe | Every interruption recoverable from session + phase docs |
 | Complete code | No stubs, no TODOs, no placeholders |

@@ -1,7 +1,9 @@
 # ForgeStack — Universal Agent Instructions
 
-> This file is the universal entry point for **all AI agent runtimes**: OpenAI Codex, Claude Code, GitHub Copilot, Cursor, Gemini CLI, and any agent that reads `AGENTS.md`.
-> Provider-specific configurations also exist: `.github/agents/` (Copilot), `CLAUDE.md` (Claude Code), `.cursor/rules/` (Cursor).
+> This file is the universal entry point for **all AI agent runtimes**: OpenAI Codex, Claude Code, GitHub Copilot, Cursor, Windsurf, Gemini CLI, JetBrains Junie, Amazon Q Developer, Aider, Devin, and any agent that reads `AGENTS.md`.
+> For chat-based UIs without file access (ChatGPT, Gemini web, Claude.ai, etc.) — copy `SYSTEM_PROMPT.md` and paste it as your first message.
+>
+> Provider-specific configurations: `.github/agents/` (Copilot), `CLAUDE.md` (Claude Code), `.cursor/rules/` (Cursor), `.windsurfrules` (Windsurf), `.junie/guidelines.md` (JetBrains Junie), `.amazonq/rules/` (Amazon Q).
 
 ---
 
@@ -61,7 +63,10 @@ python .agents/skills/forgestack/scripts/save_session.py --id <project-id> --dat
 python .agents/skills/forgestack/scripts/sync_context.py --id <project-id>
 
 # Write a phase output as a standalone markdown doc (call after saving each phase)
-python .agents/skills/forgestack/scripts/write_phase_doc.py --id <project-id> --phase requirements|architecture|backlog
+python .agents/skills/forgestack/scripts/write_phase_doc.py --id <project-id> --phase requirements|spec|architecture|backlog
+
+# Validate prerequisites before starting a phase (exits 1 with BLOCKED message if not met)
+python .agents/skills/forgestack/scripts/validate_phase.py --id <project-id> --phase spec|architecture|planning|implementation
 ```
 
 Sessions are stored in `.forgestack/sessions/<project-id>.json` (gitignored).
@@ -117,6 +122,11 @@ python .agents/skills/forgestack/scripts/save_session.py --id PROJECT_ID --field
 
 **Goal**: Write a behavioral contract for every feature before any code is written. This is the single source of truth for implementation, testing, and validation.
 
+**Prerequisite gate** — run first and stop if it exits 1:
+```bash
+python .agents/skills/forgestack/scripts/validate_phase.py --id PROJECT_ID --phase spec
+```
+
 **Context discipline**: Clear the conversation. Load only:
 ```bash
 python .agents/skills/forgestack/scripts/sync_context.py --id PROJECT_ID
@@ -167,6 +177,7 @@ python .agents/skills/forgestack/scripts/save_session.py --id PROJECT_ID --field
   "model_contracts": ["M001"],
   "confirmed": true
 }'
+python .agents/skills/forgestack/scripts/write_phase_doc.py --id PROJECT_ID --phase spec
 python .agents/skills/forgestack/scripts/save_session.py --id PROJECT_ID --field status --data '"architecture"'
 ```
 
@@ -177,6 +188,11 @@ Note: The `spec.md` file IS the spec. The session field stores the contract inde
 ### Phase 3 — ARCHITECTURE
 
 **Goal**: Recommend a technology stack and generate system diagrams.
+
+**Prerequisite gate** — run first and stop if it exits 1:
+```bash
+python .agents/skills/forgestack/scripts/validate_phase.py --id PROJECT_ID --phase architecture
+```
 
 **Context discipline**: Clear the conversation. Load only:
 ```bash
@@ -214,6 +230,11 @@ python .agents/skills/forgestack/scripts/sync_context.py --id PROJECT_ID
 ### Phase 4 — PLANNING
 
 **Goal**: Decompose the project into a complete, ordered, weighted agile backlog. Every task must trace to a spec contract.
+
+**Prerequisite gate** — run first and stop if it exits 1:
+```bash
+python .agents/skills/forgestack/scripts/validate_phase.py --id PROJECT_ID --phase planning
+```
 
 **Context discipline**: Clear the conversation. Load only:
 ```bash
@@ -270,6 +291,11 @@ python .agents/skills/forgestack/scripts/sync_context.py --id PROJECT_ID
 ### Phase 5 — IMPLEMENTATION LOOP
 
 **Goal**: Implement and test every pending task against the spec.
+
+**Prerequisite gate** — run once before the loop starts, stop if it exits 1:
+```bash
+python .agents/skills/forgestack/scripts/validate_phase.py --id PROJECT_ID --phase implementation
+```
 
 For each `pending` task:
 

@@ -6,7 +6,7 @@ argument-hint: "Describe the app to build, or say 'resume <project-id>' to conti
 
 # ForgeStack Skill
 
-ForgeStack transforms your idea into a production-ready, full-stack application through an orchestrated five-phase workflow: Requirements → Architecture → Planning → Build → Validate.
+ForgeStack transforms your idea into a production-ready, full-stack application through an orchestrated six-phase workflow: Requirements → Spec → Architecture → Planning → Build → Validate.
 
 ## When to Use
 
@@ -22,10 +22,11 @@ ForgeStack transforms your idea into a production-ready, full-stack application 
 ### New Project
 Tell ForgeStack what you want to build. It will:
 1. **Interview you** for requirements (features, scaling, stack preference)
-2. **Blueprint** the architecture with tech stack + Mermaid diagrams
-3. **Plan** a weighted agile backlog (Database → Backend → API → Frontend → Tests → Infra)
-4. **Build** every task with complete, production-ready code
-5. **Validate** each task with automated tests, auto-fixing failures up to 3 times
+2. **Spec** every feature as a behavioral contract (F-contracts + M-contracts)
+3. **Blueprint** the architecture with tech stack + Mermaid diagrams
+4. **Plan** a weighted agile backlog (Database → Backend → API → Frontend → Tests → Infra)
+5. **Build** every task with complete, production-ready code
+6. **Validate** each task with automated tests, auto-fixing failures up to 3 times
 
 ### Resume a Project
 Any interrupted build can be resumed from exactly where it left off:

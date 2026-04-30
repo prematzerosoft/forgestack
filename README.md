@@ -9,10 +9,11 @@ Clone this repo into your workspace and your AI assistant — Copilot, Claude, C
 ## What ForgeStack Does
 
 1. **INTAKE** — Interviews you to capture features, scale, constraints, and preferences
-2. **ARCHITECTURE** — Recommends a technology stack and generates flowchart, component, and sequence diagrams
-3. **PLANNING** — Decomposes the project into a weighted agile backlog (Fibonacci story points, one test per task)
-4. **IMPLEMENTATION** — Writes complete production code for each task, in dependency order, with an auto-fix loop on test failures
-5. **DELIVERY** — Produces a runnable, tested, fully-scaffolded application in `output/<project-id>/`
+2. **SPEC** — Writes a behavioral contract (F-contracts + M-contracts) for every feature before any code is written
+3. **ARCHITECTURE** — Recommends a technology stack and generates flowchart, component, and sequence diagrams
+4. **PLANNING** — Decomposes the project into a weighted agile backlog (Fibonacci story points, spec refs, one test per task)
+5. **IMPLEMENTATION** — Writes complete production code for each task, in dependency order, with an auto-fix loop on test failures
+6. **DELIVERY** — Produces a runnable, tested, fully-scaffolded application in `output/<project-id>/`
 
 All decisions are persisted to `.forgestack/sessions/` so any interruption is fully recoverable.
 
@@ -23,12 +24,12 @@ All decisions are persisted to `.forgestack/sessions/` so any interruption is fu
 ### 1. Clone Into Your Workspace
 
 ```bash
-git clone https://github.com/your-org/forgestack .forgestack-agent
+git clone https://github.com/prematzerosoft/forgestack .forgestack-agent
 ```
 
 Or add as a git submodule:
 ```bash
-git submodule add https://github.com/your-org/forgestack .forgestack-agent
+git submodule add https://github.com/prematzerosoft/forgestack .forgestack-agent
 ```
 
 ### 2. No Installation Required
@@ -43,8 +44,15 @@ The session scripts are plain Python 3.8+ with zero external dependencies. No `p
 | **VS Code Copilot (prompt)** | Open Chat → `/new-project` |
 | **Claude Code** | Start a session — `CLAUDE.md` loads automatically |
 | **Cursor** | Open Chat — `.cursor/rules/forgestack.mdc` loads automatically |
+| **Windsurf** | Open Cascade — `.windsurfrules` loads automatically |
+| **JetBrains Junie** | Open Junie — `.junie/guidelines.md` loads automatically |
+| **Amazon Q Developer** | Open Q Chat — `.amazonq/rules/forgestack.md` loads automatically |
 | **OpenAI Codex** | `AGENTS.md` at repo root is read automatically |
 | **Gemini CLI** | `AGENTS.md` at repo root is read automatically |
+| **Aider** | `AGENTS.md` at repo root is read automatically |
+| **Devin** | `AGENTS.md` at repo root is read automatically |
+| **ChatGPT / Gemini web / Claude.ai** | Copy `SYSTEM_PROMPT.md` → paste as first message |
+| **Any other chat UI** | Copy `SYSTEM_PROMPT.md` → paste as first message |
 | **Any AGENTS.md runtime** | `AGENTS.md` at repo root is read automatically |
 
 ---
@@ -54,8 +62,9 @@ The session scripts are plain Python 3.8+ with zero external dependencies. No `p
 ```
 forgestack/
 │
-├── AGENTS.md                          # Universal entry point (Codex, Claude, Gemini, etc.)
+├── AGENTS.md                          # Universal entry point (all AGENTS.md runtimes)
 ├── CLAUDE.md                          # Claude Code adapter
+├── SYSTEM_PROMPT.md                   # Copy-paste starter for any chat UI (ChatGPT, Gemini web, etc.)
 ├── LICENSE                            # MIT
 │
 ├── .github/
@@ -80,7 +89,8 @@ forgestack/
 │           │   ├── init_project.py
 │           │   ├── load_session.py
 │           │   ├── save_session.py
-│           │   └── sync_context.py
+│           │   ├── sync_context.py
+│           │   └── write_phase_doc.py
 │           └── references/
 │               ├── state-schema.md    # Full session JSON schema
 │               └── workflow.md        # Detailed SDLC procedure
@@ -88,6 +98,15 @@ forgestack/
 ├── .cursor/
 │   └── rules/
 │       └── forgestack.mdc             # Cursor IDE adapter
+│
+├── .windsurfrules                     # Windsurf (Cascade) adapter
+│
+├── .junie/
+│   └── guidelines.md                  # JetBrains Junie adapter
+│
+├── .amazonq/
+│   └── rules/
+│       └── forgestack.md              # Amazon Q Developer adapter
 │
 └── .forgestack/                       # Runtime data (gitignored)
     └── sessions/

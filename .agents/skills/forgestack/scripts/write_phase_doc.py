@@ -6,6 +6,7 @@ start of the next phase instead of relying on conversation history.
 
 Usage:
   python write_phase_doc.py --id PROJECT_ID --phase requirements
+  python write_phase_doc.py --id PROJECT_ID --phase spec
   python write_phase_doc.py --id PROJECT_ID --phase architecture
   python write_phase_doc.py --id PROJECT_ID --phase backlog
 """
@@ -13,7 +14,7 @@ import argparse
 import json
 from pathlib import Path
 
-PHASES = ("requirements", "architecture", "backlog")
+PHASES = ("requirements", "spec", "architecture", "backlog")
 
 
 def write_requirements(session: dict, docs_dir: Path) -> Path:
@@ -74,6 +75,70 @@ def write_architecture(session: dict, docs_dir: Path) -> Path:
     return out
 
 
+def write_spec(session: dict, docs_dir: Path) -> Path:
+    """Handle the spec phase doc.
+
+    The spec agent writes spec.md content directly as prose. This function:
+    - If spec.md already exists: ensures the metadata header is present, returns path.
+    - If spec.md does not exist: creates a stub from the contract index so the
+      agent can fill in each contract body.
+    """
+    out = docs_dir / "spec.md"
+    spec = session.get("spec", {})
+    status = "confirmed" if spec.get("confirmed") else "draft"
+
+    if out.exists():
+        content = out.read_text()
+        if not content.lstrip().startswith("# Spec:"):
+            header = (
+                f"# Spec: {session['name']}\n\n"
+                f"> Contract version: 1.0 | Status: {status}\n"
+                f"> Project ID: `{session['id']}`\n\n"
+            )
+            out.write_text(header + content)
+        return out
+
+    # spec.md not yet written — create a stub from the session index
+    lines = [
+        f"# Spec: {session['name']}",
+        "",
+        f"> Contract version: 1.0 | Status: {status}",
+        f"> Project ID: `{session['id']}`",
+        "",
+        "> Fill in each contract below. Use F-contracts for features and M-contracts for data models.",
+        "",
+        "## Feature Contracts",
+        "",
+    ]
+    for fc in spec.get("feature_contracts", []):
+        lines += [
+            f"### {fc} — (title)",
+            "",
+            "**Endpoint**: `METHOD /path`",
+            "**Request**: `{ }`",
+            "**Responses**:",
+            "- `200 OK`: `{ }`",
+            "",
+            "**Acceptance Criteria**:",
+            "- [ ] ",
+            "",
+            "**Error Cases**: ",
+            "",
+        ]
+    lines += ["## Model Contracts", ""]
+    for mc in spec.get("model_contracts", []):
+        lines += [
+            f"### {mc} — (title)",
+            "",
+            "| Field | Type | Constraints |",
+            "|-------|------|-------------|",
+            "| id | UUID | PK, auto-generated |",
+            "",
+        ]
+    out.write_text("\n".join(lines))
+    return out
+
+
 def write_backlog(session: dict, docs_dir: Path) -> Path:
     backlog = session.get("backlog", [])
     total_sp = sum(t.get("story_points", 0) for t in backlog)
@@ -119,6 +184,7 @@ def write_backlog(session: dict, docs_dir: Path) -> Path:
 
 WRITERS = {
     "requirements": write_requirements,
+    "spec": write_spec,
     "architecture": write_architecture,
     "backlog": write_backlog,
 }
