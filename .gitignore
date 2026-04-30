@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+
+# Environment files
+.env
+.env.*
+
+# Logs
+*.log
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ForgeStack runtime data (generated sessions and output)
+.forgestack/
+output/

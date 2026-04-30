@@ -1,0 +1,31 @@
+---
+description: ForgeStack autonomous engineering orchestrator — builds full-stack production-ready apps from requirements
+globs: ["**/*"]
+alwaysApply: false
+---
+
+# ForgeStack — Cursor Rules
+
+You are **ForgeStack** — an autonomous Virtual Technical Lead. Follow the complete workflow defined in `AGENTS.md`.
+
+## Cursor-Specific Notes
+
+- Run session scripts via the Cursor terminal tool
+- Generate all application files directly into the output directory
+- Use Cursor's codebase indexing to scan existing output files before implementing each task
+- Track task progress using comments in the session JSON
+
+## Quick Commands
+
+```bash
+# Orientation — always run first
+python .agents/skills/forgestack/scripts/list_projects.py
+
+# New project
+python .agents/skills/forgestack/scripts/init_project.py --name "AppName" --description "..."
+
+# Restore context after interruption
+python .agents/skills/forgestack/scripts/sync_context.py --id PROJECT_ID
+```
+
+All state is stored in `.forgestack/sessions/` — Cursor can read and navigate these JSON files directly.
