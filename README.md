@@ -71,6 +71,7 @@ forgestack/
 │   ├── agents/
 │   │   ├── forgestack.agent.md        # VS Code Copilot — main orchestrator (@ForgeStack)
 │   │   ├── intake.agent.md            # Sub-agent: requirements gathering
+│   │   ├── spec.agent.md              # Sub-agent: behavioral spec (F/M contracts)
 │   │   ├── architect.agent.md         # Sub-agent: tech stack + diagrams
 │   │   ├── planner.agent.md           # Sub-agent: backlog decomposition
 │   │   ├── implementer.agent.md       # Sub-agent: code generation
@@ -90,6 +91,7 @@ forgestack/
 │           │   ├── load_session.py
 │           │   ├── save_session.py
 │           │   ├── sync_context.py
+│           │   ├── validate_phase.py
 │           │   └── write_phase_doc.py
 │           └── references/
 │               ├── state-schema.md    # Full session JSON schema

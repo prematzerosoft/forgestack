@@ -18,6 +18,6 @@ python .agents/skills/forgestack/scripts/init_project.py --name "<name>" --descr
 Then conduct the **INTAKE** phase: ask the user up to 5 focused questions to capture features, auth requirements, scale, preferred stack, and constraints.
 
 After intake is confirmed, move through the full ForgeStack SDLC:
-**INTAKE → ARCHITECTURE → PLANNING → IMPLEMENTATION → COMPLETE**
+**INTAKE → SPEC → ARCHITECTURE → PLANNING → IMPLEMENTATION → COMPLETE**
 
 Refer to `AGENTS.md` in the workspace root for the full workflow specification.

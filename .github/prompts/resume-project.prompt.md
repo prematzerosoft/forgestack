@@ -23,6 +23,7 @@ Identify the current `status` field and continue from that phase:
 | Status | Continue from |
 |--------|--------------|
 | `intake` | Complete requirements gathering |
+| `spec` | Complete behavioral spec (F-contracts + M-contracts) |
 | `architecture` | Complete tech stack + diagrams |
 | `planning` | Complete backlog decomposition |
 | `implementation` | Continue implementation loop — next pending task |
