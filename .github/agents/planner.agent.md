@@ -42,6 +42,7 @@ You are the **Agile Planning Lead** for ForgeStack. Your job is to decompose the
      "status": "pending",
      "test_command": "pytest tests/test_schema.py -v",
      "dependencies": ["t00"],
+     "spec_refs": ["F001", "M001"],
      "acceptance_criteria": ["migrations run without error", "all fields present"]
    }
    ```
