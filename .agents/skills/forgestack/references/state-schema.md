@@ -31,7 +31,9 @@ Every project session is stored as a single JSON file at:
 
 | Value | Meaning |
 |-------|---------|
-| `intake` | Requirements gathering in progress || `spec` | Behavioral spec writing in progress || `architecture` | Tech stack and diagrams in progress |
+| `intake` | Requirements gathering in progress |
+| `spec` | Behavioral spec writing in progress |
+| `architecture` | Tech stack and diagrams in progress |
 | `planning` | Backlog decomposition in progress |
 | `implementation` | Coding loop active |
 | `complete` | All tasks done, project delivered |
@@ -68,9 +70,19 @@ The session `spec` field stores a **contract index** only. The full spec content
   "preferred_stack": null,
   "auth_required": true,
   "auth_type": "JWT|sessions|OAuth2|magic_links|none",
+  "local_env": "docker|native",
+  "deploy_target": "fly.io|vercel|railway|vps|aws|local-only",
   "confirmed": true
 }
 ```
+
+| Field | Description |
+|-------|-------------|
+| `app_type` | `web|mobile|desktop|cli|api` — determines spec contract format, stack options, environment setup, and run instructions |
+| `local_env` | `"docker"` if Docker is available on the user's machine; `"native"` otherwise |
+| `deploy_target` | Where the app will be deployed in production (influences CI/CD and Dockerfile) |
+
+> `app_type` controls spec contract format (HTTP vs action/command), stack recommendations, environment setup, and run instructions in COMPLETE. `local_env` defaults to `"native"` if unknown — never assume Docker is present.
 
 ---
 
@@ -98,9 +110,9 @@ The session `spec` field stores a **contract index** only. The full spec content
 
 ```json
 {
-  "flowchart": "docs/diagrams/flowchart.mmd",
-  "component": "docs/diagrams/component.mmd",
-  "sequence": "docs/diagrams/sequence.mmd"
+  "flowchart": "docs/diagrams/flowchart.md",
+  "component": "docs/diagrams/component.md",
+  "sequence": "docs/diagrams/sequence.md"
 }
 ```
 
@@ -184,9 +196,9 @@ The session `spec` field stores a **contract index** only. The full spec content
     "infrastructure": "Docker Compose"
   },
   "diagrams": {
-    "flowchart": "docs/diagrams/flowchart.mmd",
-    "component": "docs/diagrams/component.mmd",
-    "sequence": "docs/diagrams/sequence.mmd"
+    "flowchart": "docs/diagrams/flowchart.md",
+    "component": "docs/diagrams/component.md",
+    "sequence": "docs/diagrams/sequence.md"
   },
   "backlog": [
     {

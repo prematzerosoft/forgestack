@@ -31,15 +31,23 @@ Each phase writes its output to a file. The next phase loads only that file — 
 2. If new: `init_project.py --name "X" --description "Y"` → save project ID
 3. Ask up to 5 questions:
    - Core features (concrete and implementable)
+   - **App type**: `web` | `mobile` | `desktop` | `cli` | `api`
+     - `web` — browser UI | `mobile` — iOS/Android | `desktop` — native OS app | `cli` — command-line tool | `api` — backend only
    - Auth required? What kind?
    - Scale: small / medium / large / enterprise
    - Technology preference (or "recommend")
    - Hard constraints (compliance, budget, existing infra)
-4. Synthesize answers into `requirements` JSON
-5. Read back to user → confirm → apply corrections
-6. `save_session.py --field requirements --data '{...}'`
-7. `write_phase_doc.py --id PROJECT_ID --phase requirements`
-8. `save_session.py --field status --data '"spec"'`
+4. Detect (or ask) the **local runtime environment**:
+   - Does the user have **Docker** available? (`docker --version`)
+   - If not, what is their native runtime? (e.g. Node 20, Python 3.12, Bun)
+   - What is the intended **deployment target**? (e.g. VPS, Fly.io, Vercel, Railway, local-only)
+   - Store the result as `local_env: "docker" | "native" | "unknown"` and `deploy_target`
+   - If unknown, default to `"native"` with a note — never assume Docker is present
+5. Synthesize answers into `requirements` JSON
+6. Read back to user → confirm → apply corrections
+7. `save_session.py --field requirements --data '{...}'`
+8. `write_phase_doc.py --id PROJECT_ID --phase requirements`
+9. `save_session.py --field status --data '"spec"'`
 
 **Output**: `session.requirements` object, `docs/requirements.md`, `status = spec`
 
@@ -54,12 +62,16 @@ Each phase writes its output to a file. The next phase loads only that file — 
 **Steps**:
 1. `sync_context.py` — restore awareness
 2. Read `{output_dir}/docs/requirements.md`
-3. For every feature, write an **F-contract**:
-   - Endpoint, HTTP method
-   - Request shape (required/optional fields, types, constraints)
-   - All response codes + response bodies
-   - Acceptance criteria (testable, specific)
-   - Error cases (what input triggers each error response)
+3. For every feature, write an **F-contract** — format depends on `requirements.app_type`:
+
+   **web / api / mobile** — HTTP endpoint contract:
+   - Endpoint + HTTP method, request shape, all response codes + bodies
+   - Acceptance criteria (testable, specific), error cases
+
+   **desktop / cli** — action/command contract (no HTTP, no endpoint):
+   - Trigger (menu item, keyboard shortcut, CLI flag), input, outcome
+   - State stored or mutated, acceptance criteria, error cases
+
 4. For every data entity, write an **M-contract**:
    - Field table: name, type, constraints
    - No tech decisions (e.g. don't say "PostgreSQL column") — implementation-neutral
@@ -80,13 +92,38 @@ Each phase writes its output to a file. The next phase loads only that file — 
 
 **Steps**:
 1. `sync_context.py` — restore awareness; read `{output_dir}/docs/spec.md`
-2. Based on the spec (feature complexity, constraints, scale), choose:
-   - Language, backend framework, frontend (or API-only), database, auth, infrastructure
-   - Prioritize fit-for-purpose over familiarity
-3. Write 3 Mermaid diagram files to `{output_dir}/docs/diagrams/`:
-   - `flowchart.mmd` — end-to-end user flow (`flowchart TD`)
-   - `component.mmd` — all system components (`graph LR`)
-   - `sequence.mmd` — primary interaction (`sequenceDiagram`)
+2. Based on the spec and `requirements.app_type`, choose:
+   - **Language** — what genuinely fits (not your default)
+   - **UI layer** — branch by `app_type`:
+     - `web` → React, Vue, Next.js, SvelteKit, HTMX
+     - `mobile` → React Native / Expo, Flutter, Swift, Kotlin
+     - `desktop` → Tauri (Rust + web UI, lightest), Electron (Node + web UI), Flutter Desktop, .NET MAUI, Qt
+     - `cli` → no UI; Go, Rust, Python+typer
+     - `api` → no UI
+   - **Backend / logic**: FastAPI, Express, Rails, Go Fiber, Spring Boot — or embedded in the desktop app if no server is needed
+   - **Database**: SQL vs NoSQL; for desktop with no server, use SQLite embedded
+   - **Auth**: JWT, sessions, OAuth2, magic links; for offline desktop use OS credential store / keychain
+   - **Distribution**:
+     - `web/api` → Docker, serverless, VPS, k8s
+     - `desktop` → platform installers (`.dmg`, `.exe`, `.AppImage`), auto-updater
+     - `mobile` → App Store / Play Store
+     - `cli` → binary releases, Homebrew tap, package registry
+3. Write 3 diagram files to `{output_dir}/docs/diagrams/` as **Markdown files** containing a fenced Mermaid code block. This format is directly previewable in VS Code (`Ctrl+Shift+V` / `Cmd+Shift+V`):
+   - `flowchart.md` — end-to-end user flow (`flowchart TD`)
+   - `component.md` — all system components (`graph LR`)
+   - `sequence.md` — primary interaction (`sequenceDiagram`)
+
+   Each file must follow this structure:
+   ````markdown
+   # <Diagram Title>
+
+   > <one-line description>
+
+   ```mermaid
+   flowchart TD
+     ...
+   ```
+   ````
 4. Present stack rationale + all 3 diagrams inline to user
 5. Wait for user confirmation — iterate until approved
 6. `save_session.py --field tech_stack --data '{...}'`
@@ -109,17 +146,51 @@ Each phase writes its output to a file. The next phase loads only that file — 
 2. Decompose in this order (mandatory):
    ```
    0  scaffold   → project setup, env, linting, CI skeleton
-   1  database   → schema migrations
-   2  backend    → data models, ORM
-   3  backend    → services, domain logic
-   4  api        → REST/GraphQL routes
-   5  auth       → middleware, guards
-   6  frontend   → scaffold, router, layout
-   7  frontend   → components per feature
-   8  integration → frontend ↔ API wiring
-   9  testing    → integration + E2E
-   10 infra      → Docker, deployment
-   11 infra      → CI/CD pipeline
+                   Always includes: .env.example, README.md with local-run instructions
+   1  environment → CONDITIONAL on requirements.app_type + requirements.local_env:
+
+                   IF app_type == "web" or "api" or "mobile" (with backend):
+                     IF local_env == "docker":
+                       - docker-compose.yml (all services: app + db + cache etc.)
+                       - Multi-stage Dockerfile per service (dev target + prod target)
+                       - Same base image locally and on server (e.g. node:20-alpine)
+                       - No globally-installed CLI tools as runtime deps
+                     IF local_env == "native" (or Docker not available):
+                       - Process manager script (e.g. Procfile or start.sh)
+                       - SQLite for dev DB; in-memory/file-based cache fallback
+                       - .env.example documents what to install natively
+                       - README includes native install + deployment instructions
+                     ALWAYS produce a Dockerfile + docker-compose.yml for the deploy_target
+                     (CI/CD and production), regardless of local_env.
+
+                   IF app_type == "desktop":
+                     - No Docker needed for local dev
+                     - Dev task: native build script (e.g. `cargo tauri dev`, `npm run electron:dev`)
+                     - Package/installer task: platform-specific bundler config
+                         Tauri     → tauri.conf.json + `cargo tauri build`
+                         Electron  → electron-builder config + `npm run dist`
+                         Flutter   → `flutter build macos/windows/linux`
+                     - CI/CD: build installers per platform in GitHub Actions
+                     - Auto-updater config if applicable
+
+                   IF app_type == "cli":
+                     - Native build script; single binary output
+                     - Release workflow: cross-compile per platform, attach to GitHub Release
+
+                   IF app_type == "mobile":
+                     - Expo / React Native: `npx expo start` locally; EAS Build for distribution
+                     - Flutter: `flutter run` locally; build per target (apk, ipa)
+
+   2  database   → schema migrations
+   3  backend    → data models, ORM
+   4  backend    → services, domain logic
+   5  api        → REST/GraphQL routes
+   6  auth       → middleware, guards
+   7  frontend   → scaffold, router, layout
+   8  frontend   → components per feature
+   9  integration → frontend ↔ API wiring
+   10 testing    → integration + E2E
+   11 infra      → CI/CD pipeline (builds Docker image, runs tests, pushes to registry)
    ```
 3. Each task: `id`, `title`, `description`, `spec_refs`, `layer`, `story_points`, `priority`, `status: pending`, `test_command`, `dependencies`, `acceptance_criteria`
 4. Story points: Fibonacci 1–8; anything ≥13 must be split
@@ -175,7 +246,7 @@ python .agents/skills/forgestack/scripts/save_session.py \
 
 ---
 
-## Phase 5 — COMPLETE
+## Phase 6 — COMPLETE
 
 **Steps**:
 1. `save_session.py --field status --data '"complete"'`
@@ -191,9 +262,55 @@ Stack:      <language> / <backend> / <frontend> / <database>
 
 Tasks:      N complete, N failed
 Story pts:  N total
+```
 
-Run the app:   <startup command from tech stack>
-Resume later:  python .agents/skills/forgestack/scripts/load_session.py --id <id>
+3. Print the **How to Run Locally** section — adapted to `requirements.app_type` + `requirements.local_env`:
+
+```
+── How to Run Locally ─────────────────────────────────────
+1. Copy environment variables (if applicable):
+     cp .env.example .env
+
+── IF app_type == "web" or "api" ──────────────────────────
+  IF local_env == "docker":
+    docker compose up --build
+    Open: <local URL> | Test: docker compose run --rm app <test command>
+  IF local_env == "native":
+    <install command>  +  <backend start>  +  <frontend start>
+    Open: <local URL> | Test: <test command>
+
+── IF app_type == "desktop" ───────────────────────────────
+  Dev:  <dev start>  (e.g. cargo tauri dev / npm run electron:dev / flutter run)
+  App opens as a native window — no browser needed
+  Test: <test command>  |  Release: <build command>
+
+── IF app_type == "mobile" ────────────────────────────────
+  <start command>  (e.g. npx expo start / flutter run)
+  Scan QR with Expo Go, or run on simulator | Test: <test command>
+
+── IF app_type == "cli" ───────────────────────────────────
+  <build command>  |  Run: <binary> --help  |  Test: <test command>
+───────────────────────────────────────────────────────────
+```
+
+4. **Run the full test suite before launch**:
+   ```bash
+   cd {output_dir} && {full test command for the stack}
+   ```
+   - If all tests pass: proceed to launch offer
+   - If any test fails: diagnose, apply a minimal fix, re-run — do not offer to launch until tests are green
+
+5. **Offer to launch the app**:
+   - Ask: *"Would you like me to start the app now so you can test it?"*
+   - If yes: use the start command appropriate for `app_type` + `local_env` and stream logs.
+   - While the app is running, **monitor stdout/stderr continuously**:
+     - Surface any error, warning, or crash line to the user immediately
+     - If a runtime error appears, diagnose and apply a fix, then restart — do not wait for the user to report it
+   - If the app fails to start, read the error, apply a fix, and retry once.
+
+5. Print resume pointer:
+```
+Resume later: python .agents/skills/forgestack/scripts/load_session.py --id <id>
 ```
 
 ---
