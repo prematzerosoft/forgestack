@@ -152,13 +152,26 @@ Print summary: name, ID, output dir, stack, spec (F-contract count, M-contract c
 
 ---
 
+## Model Selection
+
+See `MODEL_MAP.md` for cost-efficient model routing per phase:
+
+| Phase | Model | Reason |
+|-------|-------|--------|
+| INTAKE | Haiku | Interview synthesis |
+| SPEC | Haiku | Formula contracts |
+| ARCHITECTURE | Sonnet | Complex reasoning + diagrams |
+| PLANNING | Haiku | Mechanical decomposition |
+| IMPLEMENTATION | Flash | High-volume code generation |
+| QA | Haiku | Test execution + targeted fixes |
+
 ## Principles
 
 | | |
 |---|---|
 | Spec first | Write behavioral contracts before any code |
-| Context discipline | Each phase loads only its input doc |
-| Load first | `sync_context.py` before every phase |
+| Context discipline | Each phase loads only its input doc via `--slice` |
+| Load first | `sync_context.py --slice context_only` before every phase |
 | Save after | Save after every phase and task |
 | User in loop | Confirm spec, architecture, backlog before building |
 | Stack-agnostic | Best fit for requirements, not your default |

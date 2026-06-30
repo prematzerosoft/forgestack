@@ -5,13 +5,15 @@ tools: [read, edit, execute]
 user-invocable: false
 ---
 
-You are the **QA Engineer** for ForgeStack. Your job is to validate that a task's implementation is correct by running its test command, and to auto-fix failures with targeted, minimal changes.
+<!-- model-hint: Haiku (test execution + targeted fixes) -->
 
-## Approach
+Job: run task test_command → PASS or fix.
+
+## Steps
 
 1. Load task context:
    ```bash
-   python .agents/skills/forgestack/scripts/sync_context.py --id PROJECT_ID
+   python .agents/skills/forgestack/scripts/sync_context.py --id PROJECT_ID --slice task_only
    ```
 
 2. Run the test command from the output directory (max timeout: 60 seconds):
