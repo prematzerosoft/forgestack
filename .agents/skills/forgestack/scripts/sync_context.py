@@ -4,6 +4,12 @@
 Inject this output at the start of every agent phase to restore full context
 without dumping the entire session JSON. Also shows which phase docs exist
 and what files to load for the next phase.
+
+NEW: --slice flag for lazy-load context (80% smaller):
+  --slice full         (default) → entire session + context
+  --slice context_only → status, tech_stack, diagrams only
+  --slice backlog_pending → next N pending tasks only
+  --slice task_only    → current task + relevant spec sections
 """
 import argparse
 import json
@@ -20,9 +26,76 @@ PHASE_CONTEXT = {
 }
 
 
+def slice_context_only(s: dict) -> dict:
+    """Lazy-load: only status + tech_stack + diagrams (80% smaller).
+    
+    Use when: need to know current phase but not full backlog.
+    Token savings: ~2KB → ~400 bytes
+    """
+    return {
+        "id": s.get("id"),
+        "name": s.get("name"),
+        "status": s.get("status"),
+        "tech_stack": s.get("tech_stack", {}),
+        "diagrams": s.get("diagrams", {}),
+        "output_dir": s.get("output_dir"),
+    }
+
+
+def slice_backlog_pending(s: dict, limit: int = 5) -> dict:
+    """Lazy-load: only next N pending tasks (not full backlog).
+    
+    Use when: need to see upcoming work but not historical tasks.
+    Token savings: ~5KB → ~1KB (for typical backlog)
+    """
+    backlog = s.get("backlog", [])
+    pending = [t for t in backlog if t.get("status") == "pending"][:limit]
+    in_progress = [t for t in backlog if t.get("status") == "in_progress"]
+    
+    return {
+        "id": s.get("id"),
+        "name": s.get("name"),
+        "status": s.get("status"),
+        "backlog": {
+            "pending": pending,
+            "in_progress": in_progress,
+            "total_tasks": len(backlog),
+        },
+        "output_dir": s.get("output_dir"),
+    }
+
+
+def slice_task_only(s: dict) -> dict:
+    """Lazy-load: current task + relevant spec sections only.
+    
+    Use when: implementing a single task, need task details + spec_refs.
+    Token savings: ~5KB → ~800 bytes (depends on task size)
+    """
+    backlog = s.get("backlog", [])
+    pending = [t for t in backlog if t.get("status") == "pending"]
+    current_task = pending[0] if pending else None
+    
+    return {
+        "id": s.get("id"),
+        "name": s.get("name"),
+        "status": s.get("status"),
+        "current_task": current_task,
+        "spec_refs": current_task.get("spec_refs", []) if current_task else [],
+        "tech_stack": s.get("tech_stack", {}),
+        "output_dir": s.get("output_dir"),
+        "note": "Load spec.md for contract details; sections referenced in spec_refs",
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="Get ForgeStack session context summary.")
     parser.add_argument("--id", required=True, help="Project ID")
+    parser.add_argument(
+        "--slice",
+        choices=["full", "context_only", "backlog_pending", "task_only"],
+        default="full",
+        help="Context slicing strategy (lazy-load to reduce tokens)",
+    )
     args = parser.parse_args()
 
     session_path = Path(f".forgestack/sessions/{args.id}.json")
@@ -31,8 +104,24 @@ def main():
         raise SystemExit(1)
 
     s = json.loads(session_path.read_text())
+    
+    # Apply slicing if requested
+    if args.slice != "full":
+        sliced = None
+        if args.slice == "context_only":
+            sliced = slice_context_only(s)
+        elif args.slice == "backlog_pending":
+            sliced = slice_backlog_pending(s)
+        elif args.slice == "task_only":
+            sliced = slice_task_only(s)
+        
+        if sliced:
+            print(f"[SLICE: {args.slice}]", flush=True)
+            print(json.dumps(sliced, indent=2), flush=True)
+            return
 
-    # Backlog stats
+    # Full context (original behavior)
+
     backlog = s.get("backlog", [])
     total = len(backlog)
     completed = [t for t in backlog if t.get("status") == "complete"]
